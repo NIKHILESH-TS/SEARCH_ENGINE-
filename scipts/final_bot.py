@@ -3,6 +3,7 @@ import random
 import requests
 from urllib.parse import urlparse
 
+
 # --- Robots.txt checker ---
 def can_crawl(url):
     parsed = urlparse(url)
@@ -23,3 +24,23 @@ def can_crawl(url):
     except requests.RequestException as e:
         print(f"[WARNING] Couldn't retrieve robots.txt ({e}). Defaulting to allowed.")
         return True
+    
+
+# --- HTML Link Parser ---
+def parse_links(hyperlinks, base_url):
+    parsed_urls = []
+    base = urlparse(base_url)
+    for tag in hyperlinks:
+        href = tag.get("href")
+        if not href or href.startswith("#"):
+            continue
+        if href.startswith("//"):
+            href = f"https:{href}"
+        elif href.startswith("/"):
+            href = f"{base.scheme}://{base.netloc}{href}"
+        elif not href.startswith("http"):
+            continue
+
+
+        parsed_urls.append(href.split("#")[0])
+    return parsed_urls
