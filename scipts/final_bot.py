@@ -2,6 +2,7 @@ import time
 import random
 import requests
 from urllib.parse import urlparse
+from bs4 import BeautifulSoup
 
 
 # --- Robots.txt checker ---
@@ -49,3 +50,36 @@ def parse_links(hyperlinks, base_url):
 
         parsed_urls.append(href.split("#")[0])
     return parsed_urls
+
+# ---  Page Indexer ---
+def simple_index_page(soup, url):
+    title = soup.title.string.strip() if soup.title and soup.title.string else "No Title"
+    description_tag = soup.find("meta", attrs={"name": "description"})
+    description = description_tag["content"].strip() if description_tag and description_tag.get("content") else "No Description"
+
+    # Try to find author and date
+    author = "Unknown"
+    author_tag = soup.find("meta", attrs={"name": "author"})
+    if author_tag and author_tag.get("content"):
+        author = author_tag["content"].strip()
+    elif soup.find(class_="author"):
+        author = soup.find(class_="author").get_text(strip=True)
+
+    date = "Unknown"
+    for time_tag in soup.find_all("time"):
+        if time_tag.get("datetime"):
+            date = time_tag["datetime"]
+            break
+        elif time_tag.get_text(strip=True):
+            date = time_tag.get_text(strip=True)
+            break
+
+    words = set(word.lower() for word in soup.get_text().split())
+    return {
+        "url": url,
+        "title": title,
+        "description": description,
+        "author": author,
+        "date": date,
+        "words": words
+    }
