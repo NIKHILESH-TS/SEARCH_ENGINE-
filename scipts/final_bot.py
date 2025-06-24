@@ -3,6 +3,8 @@ import random
 import requests
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
+from queue import Queue
+import json
 
 
 # --- Robots.txt checker ---
@@ -83,3 +85,75 @@ def simple_index_page(soup, url):
         "date": date,
         "words": words
     }
+
+# --- Worker Thread Function ---
+def crawl(args):
+    queue, visited, count, limit, lock, index, info, doc_id, stop, output_file = (
+        args['queue'], args['visited'], args['count'], args['limit'],
+        args['lock'], args['index'], args['info'], args['doc_id'], args['stop'], args['output_file'])
+
+    while not stop.is_set():
+        try:
+            url = queue.get(timeout=5)
+        except Exception:
+            break
+
+        domain = urlparse(url).netloc.lower()
+        if any(blocked in domain for blocked in BLOCKED_DOMAINS):
+            print(f"[SKIP] Blocked domain: {url}")
+            queue.task_done()
+            continue
+
+        with lock:
+            if count[0] >= limit:
+                queue.queue.clear()
+                stop.set()
+                print("[INFO] Crawl limit reached.")
+                break
+            if url in visited:
+                queue.task_done()
+                continue
+            visited.add(url)
+
+        print(f"[CRAWL] Fetching: {url}")
+        time.sleep(random.uniform(2, 5))
+        try:
+            res = requests.get(url, timeout=5)
+            res.raise_for_status()
+            soup = BeautifulSoup(res.content, "html.parser")
+
+            # Indexing the content
+            result = simple_index_page(soup, url)
+            with lock:
+                current_doc_id = doc_id[0]
+                
+                # Prepare data for JSON output
+                doc_data = {
+                    'doc_id': current_doc_id,
+                    'url': result['url'],
+                    'title': result['title'],
+                    'description': result['description'],
+                    'author': result['author'],
+                    'date': result['date']
+                }
+                
+                # Write to file immediately
+                output_file.write(json.dumps(doc_data, ensure_ascii=False) + '\n')
+
+                # Update in-memory index and info
+                for word in result["words"]:
+                    index.setdefault(word, set()).add(current_doc_id)
+                info[current_doc_id] = result
+                doc_id[0] += 1
+
+            new_links = parse_links(soup.select("a[href]"), url)
+            with lock:
+                for link in new_links:
+                    if link not in visited:
+                        queue.put(link)
+                count[0] += 1
+
+        except requests.RequestException as e:
+            print(f"[ERROR] Failed to fetch {url}: {e}")
+        finally:
+            queue.task_done()
