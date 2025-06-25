@@ -34,8 +34,66 @@ def can_crawl(url):
         return True
     
 # --- Blocked Domains ---
-BLOCKED_DOMAINS = {"google.com", "youtube.com", "facebook.com", "twitter.com", "instagram.com", "linkedin.com", "pinterest.com", "tiktok.com", "reddit.com", "snapchat.com", "tumblr.com", "wikipedia.org", "yahoo.com", "bing.com", "baidu.com", "yandex.ru", "vk.com", "qq.com", "weibo.com", "naver.com", "daum.net", "sina.com.cn", "sohu.com", "163.com", "alibaba.com", "jd.com", "taobao.com", "tmall.com", "amazon.com", "ebay.com", "etsy.com", "craigslist.org", "walmart.com", "bestbuy.com", "target.com", "costco.com", "homedepot.com", "lowes.com", "ikea.com", "wayfair.com", "overstock.com", "zillow.com", "trulia.com", "realtor.com", "airbnb.com", "booking.com", "expedia.com", "tripadvisor.com", "hotels.com", "kayak.com", "skyscanner.com", "orbitz.com", "travelocity.com", "priceline.com", "southwest.com", "delta.com", "united.com", "americanairlines.com", "jetblue.com", "alaskaair.com", "virginamerica.com", "spirit.com", "frontierairlines.com", "ryanair.com", "easyjet.com", "lufthansa.com", "britishairways.com", "airfrance.com", "klm.com", "emirates.com", "qatarairways.com","patreon.com", "kickstarter.com", "indiegogo.com", "gofundme.com", "crowdfunder.com", "crowdsupply.com", "seedrs.com", "crowdcube.com", "fundable.com", "startsomegood.com", "fundrazr.com", "change.org", "avaaz.org", "moveon.org", "care2.com", "actionnetwork.org", "sumofus.org", "greenpeace.org", "wwf.org", "amnesty.org", "humanrightsfirst.org", "hrw.org", "icrc.org", "unicef.org", "who.int", "un.org", "worldbank.org", "imf.org", "oecd.org", "europa.eu", "nato.int", "cia.gov", "fbi.gov", "usps.com"}
+BLOCKED_DOMAINS = {
+    # === Social Media ===
+    "facebook.com", "instagram.com", "twitter.com", "x.com", "tiktok.com", "snapchat.com",
+    "reddit.com", "pinterest.com", "linkedin.com", "tumblr.com", "youtube.com", "vimeo.com",
+    "twitch.tv", "clubhouse.com", "discord.com", "telegram.org", "wechat.com", "weibo.com",
+    "line.me", "kakao.com", "kakaocorp.com", "threads.net", "bilibili.com", "quora.com",
+    "medium.com", "mastodon.social", "gettr.com", "gab.com", "truthsocial.com", "hive.blog",
+    "mewe.com", "nextdoor.com", "flickr.com", "imgur.com", "mix.com", "vk.com", "ok.ru",
+    "xuite.net", "plurk.com", "coub.com", "tagged.com", "myspace.com", "friendster.com",
+    "viadeo.com", "newgrounds.com", "bitclout.com", "ello.co", "peach.cool", "wt.social",
+    "spacehey.com", "steemit.com",
 
+    # === Streaming & Entertainment ===
+    "netflix.com", "hulu.com", "disneyplus.com", "primevideo.com", "hotstar.com", "zee5.com",
+    "sonyliv.com", "crunchyroll.com", "spotify.com", "gaana.com", "jiosaavn.com", "wynk.in",
+    "soundcloud.com", "audible.com", "pandora.com", "dailymotion.com",
+
+    # === E-commerce / Marketplaces ===
+    "amazon.com", "flipkart.com", "meesho.com", "snapdeal.com", "myntra.com", "ajio.com",
+    "ebay.com", "etsy.com", "craigslist.org", "shopify.com", "zappos.com", "shein.com",
+    "asos.com", "boohoo.com", "zalando.com", "walmart.com", "bestbuy.com", "target.com",
+    "costco.com", "homedepot.com", "lowes.com", "ikea.com", "wayfair.com", "overstock.com",
+
+    # === Real Estate ===
+    "zillow.com", "trulia.com", "realtor.com", "magicbricks.com", "99acres.com", "housing.com",
+
+    # === Travel & Booking ===
+    "airbnb.com", "booking.com", "expedia.com", "tripadvisor.com", "hotels.com", "kayak.com",
+    "skyscanner.com", "orbitz.com", "travelocity.com", "priceline.com", "makemytrip.com",
+    "goibibo.com", "cleartrip.com", "agoda.com", "ixigo.com",
+
+    # === Airlines ===
+    "southwest.com", "delta.com", "united.com", "americanairlines.com", "jetblue.com",
+    "alaskaair.com", "virginamerica.com", "spirit.com", "frontierairlines.com", "ryanair.com",
+    "easyjet.com", "lufthansa.com", "britishairways.com", "airfrance.com", "klm.com",
+    "emirates.com", "qatarairways.com", "indigo.com", "vistara.com", "airindia.com",
+
+    # === Crowdfunding & Activism ===
+    "patreon.com", "kickstarter.com", "indiegogo.com", "gofundme.com", "crowdfunder.com",
+    "crowdsupply.com", "seedrs.com", "crowdcube.com", "fundable.com", "startsomegood.com",
+    "fundrazr.com", "change.org", "avaaz.org", "moveon.org", "care2.com", "actionnetwork.org",
+    "sumofus.org", "greenpeace.org", "wwf.org", "amnesty.org", "humanrightsfirst.org",
+    "hrw.org", "icrc.org",
+
+    # === Government & Global Organizations ===
+    "unicef.org", "who.int", "un.org", "worldbank.org", "imf.org", "oecd.org", "europa.eu",
+    "nato.int", "cia.gov", "fbi.gov", "usps.com", "irs.gov", "nasa.gov", "whitehouse.gov",
+    "gov.uk", "gov.in",
+
+    # === Search Engines & Portals ===
+    "google.com", "bing.com", "yahoo.com", "baidu.com", "yandex.ru", "duckduckgo.com", 
+    "wikipedia.org",
+
+    # === Tech/Code Hosting ===
+    "github.com", "gitlab.com", "bitbucket.org",
+
+    # === Chinese Marketplaces & Portals ===
+    "alibaba.com", "taobao.com", "tmall.com", "jd.com", "qq.com", "sina.com.cn", "sohu.com",
+    "163.com"
+}
 # --- HTML Link Parser ---
 def parse_links(hyperlinks, base_url):
     parsed_urls = []
