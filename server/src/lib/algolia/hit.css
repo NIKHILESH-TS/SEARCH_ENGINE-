@@ -1,0 +1,22 @@
+.holographic-card-wrapper {
+  padding: 1rem;
+}
+
+.holographic-card {
+  background: linear-gradient(135deg, #9a00ff, #00b8ff);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.holographic-card-content {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.cyber-link {
+  color: #00f6ff;
+  text-decoration: underline;
+}
