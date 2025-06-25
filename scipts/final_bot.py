@@ -5,6 +5,11 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from queue import Queue
 import json
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
+
+
 
 
 # --- Robots.txt checker ---
@@ -157,3 +162,43 @@ def crawl(args):
             print(f"[ERROR] Failed to fetch {url}: {e}")
         finally:
             queue.task_done()
+
+# --- Main Bot Logic ---
+def starck_bot():
+    seeds = [
+        "https://example.com",
+    ]
+
+    q = Queue()
+    for url in seeds:
+        q.put(url)
+
+    visited = set()
+    limit = 2000
+    count = [0]
+    lock = threading.Lock()
+    index, info = {}, {}
+    doc_id = [0]
+    stop = threading.Event()
+
+    output_filename = 'data.jsonl'
+    with open(output_filename, 'w', encoding='utf-8') as output_file:
+        args = {
+            'queue': q,
+            'visited': visited,
+            'count': count,
+            'limit': limit,
+            'lock': lock,
+            'index': index,
+            'info': info,
+            'doc_id': doc_id,
+            'stop': stop,
+            'output_file': output_file
+        }
+
+        NUM_THREADS = 50
+        with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
+            for _ in range(NUM_THREADS):
+                executor.submit(crawl, args)
+
+    print(f"[INFO] Crawling completed. Data saved to {output_filename}")
