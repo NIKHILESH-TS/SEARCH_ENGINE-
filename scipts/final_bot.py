@@ -202,3 +202,9 @@ def starck_bot():
                 executor.submit(crawl, args)
 
     print(f"[INFO] Crawling completed. Data saved to {output_filename}")
+# --- Entrypoint ---
+def main():
+    starck_bot()
+
+if __name__ == "__main__":
+    main()
