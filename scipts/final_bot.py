@@ -1,38 +1,13 @@
 import time
-import random
-import requests
-from urllib.parse import urlparse
-from bs4 import BeautifulSoup
-from queue import Queue
 import json
+import random
 import threading
+from queue import Queue
+from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor
+import requests
+from bs4 import BeautifulSoup
 
-
-
-
-
-# --- Robots.txt checker ---
-def can_crawl(url):
-    parsed = urlparse(url)
-    robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
-    print(f"[INFO] Checking robots.txt: {robots_url}")
-    time.sleep(random.uniform(1, 3))
-    try:
-        res = requests.get(robots_url, timeout=5)
-        res.raise_for_status()
-        disallowed = [line.split(':')[1].strip() for line in res.text.splitlines()
-                      if line.lower().startswith('disallow') and ':' in line]
-        path = parsed.path or "/"
-        for dis_path in disallowed:
-            if path.startswith(dis_path):
-                print(f"[BLOCKED] {url} disallowed by robots.txt")
-                return False
-        return True
-    except requests.RequestException as e:
-        print(f"[WARNING] Couldn't retrieve robots.txt ({e}). Defaulting to allowed.")
-        return True
-    
 # --- Blocked Domains ---
 BLOCKED_DOMAINS = {
     # === Social Media ===
@@ -93,7 +68,42 @@ BLOCKED_DOMAINS = {
     # === Chinese Marketplaces & Portals ===
     "alibaba.com", "taobao.com", "tmall.com", "jd.com", "qq.com", "sina.com.cn", "sohu.com",
     "163.com"
-}
+}# (unchanged for brevity)
+
+# --- Retryable Fetch ---
+def fetch_with_retries(url, headers=None, retries=3, timeout=10, backoff=2):
+    for i in range(retries):
+        try:
+            return requests.get(url, headers=headers, timeout=timeout)
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as e:
+            print(f"[RETRY {i+1}] {url} failed: {e}")
+            time.sleep(backoff * (i + 1))  # Exponential backoff
+        except requests.exceptions.RequestException as e:
+            print(f"[ERROR] Unrecoverable error for {url}: {e}")
+            break
+    return None
+
+# --- Robots.txt checker ---
+def can_crawl(url):
+    parsed = urlparse(url)
+    robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
+    print(f"[INFO] Checking robots.txt: {robots_url}")
+    time.sleep(random.uniform(1, 3))
+    headers = {"User-Agent": "Mozilla/5.0"}
+    res = fetch_with_retries(robots_url, headers=headers, timeout=5)
+    if not res:
+        print(f"[WARNING] Couldn't retrieve robots.txt. Defaulting to allowed.")
+        return True
+
+    disallowed = [line.split(':')[1].strip() for line in res.text.splitlines()
+                  if line.lower().startswith('disallow') and ':' in line]
+    path = parsed.path or "/"
+    for dis_path in disallowed:
+        if path.startswith(dis_path):
+            print(f"[BLOCKED] {url} disallowed by robots.txt")
+            return False
+    return True
+
 # --- HTML Link Parser ---
 def parse_links(hyperlinks, base_url):
     parsed_urls = []
@@ -116,7 +126,7 @@ def parse_links(hyperlinks, base_url):
         parsed_urls.append(href.split("#")[0])
     return parsed_urls
 
-# ---  Page Indexer ---
+# --- Enhanced Page Indexer ---
 def simple_index_page(soup, url):
     title = soup.title.string.strip() if soup.title and soup.title.string else "No Title"
     description_tag = soup.find("meta", attrs={"name": "description"})
@@ -155,6 +165,10 @@ def crawl(args):
         args['queue'], args['visited'], args['count'], args['limit'],
         args['lock'], args['index'], args['info'], args['doc_id'], args['stop'], args['output_file'])
 
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+
     while not stop.is_set():
         try:
             url = queue.get(timeout=5)
@@ -180,17 +194,20 @@ def crawl(args):
 
         print(f"[CRAWL] Fetching: {url}")
         time.sleep(random.uniform(2, 5))
-        try:
-            res = requests.get(url, timeout=5)
-            res.raise_for_status()
-            soup = BeautifulSoup(res.content, "html.parser")
+        res = fetch_with_retries(url, headers=headers, retries=3, timeout=10)
 
-            # Indexing the content
+        if not res or res.status_code != 200:
+            print(f"[ERROR] Giving up on {url}")
+            queue.task_done()
+            continue
+
+        try:
+            soup = BeautifulSoup(res.content, "html.parser")
             result = simple_index_page(soup, url)
+
             with lock:
                 current_doc_id = doc_id[0]
-                
-                # Prepare data for JSON output
+
                 doc_data = {
                     'doc_id': current_doc_id,
                     'url': result['url'],
@@ -199,11 +216,9 @@ def crawl(args):
                     'author': result['author'],
                     'date': result['date']
                 }
-                
-                # Write to file immediately
+
                 output_file.write(json.dumps(doc_data, ensure_ascii=False) + '\n')
 
-                # Update in-memory index and info
                 for word in result["words"]:
                     index.setdefault(word, set()).add(current_doc_id)
                 info[current_doc_id] = result
@@ -216,23 +231,22 @@ def crawl(args):
                         queue.put(link)
                 count[0] += 1
 
-        except requests.RequestException as e:
-            print(f"[ERROR] Failed to fetch {url}: {e}")
+        except Exception as e:
+            print(f"[ERROR] Processing failed for {url}: {e}")
         finally:
             queue.task_done()
 
 # --- Main Bot Logic ---
 def starck_bot():
     seeds = [
-        "https://example.com",
-    ]
+        "https://example.com",]
 
     q = Queue()
     for url in seeds:
         q.put(url)
 
     visited = set()
-    limit = 2000
+    limit = 4000
     count = [0]
     lock = threading.Lock()
     index, info = {}, {}
@@ -254,12 +268,13 @@ def starck_bot():
             'output_file': output_file
         }
 
-        NUM_THREADS = 50
+        NUM_THREADS = 100
         with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
             for _ in range(NUM_THREADS):
                 executor.submit(crawl, args)
 
     print(f"[INFO] Crawling completed. Data saved to {output_filename}")
+
 # --- Entrypoint ---
 def main():
     starck_bot()
