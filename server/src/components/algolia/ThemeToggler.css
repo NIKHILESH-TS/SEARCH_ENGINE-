@@ -1,0 +1,50 @@
+.theme-toggler {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.theme-toggler:hover {
+  transform: scale(1.1) rotate(15deg);
+  box-shadow: 0 0 20px rgba(0, 246, 255, 0.5);
+}
+
+.theme-toggler .sun, .theme-toggler .moon {
+  font-size: 1.5rem;
+  transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.5s;
+  position: absolute;
+}
+
+[data-theme='dark'] .sun {
+  transform: translateY(150%);
+  opacity: 0;
+}
+
+[data-theme='dark'] .moon {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+[data-theme='light'] .sun {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+[data-theme='light'] .moon {
+  transform: translateY(-150%);
+  opacity: 0;
+}

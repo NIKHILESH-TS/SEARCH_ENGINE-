@@ -1,0 +1,75 @@
+@keyframes gradient-animation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #0077ff, 0 0 20px #0077ff;
+  }
+  to {
+    text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #ff00de, 0 0 40px #ff00de;
+  }
+}
+
+.holographic-card-wrapper {
+  perspective: 1000px;
+}
+
+.holographic-card {
+  position: relative;
+  background: linear-gradient(45deg, #ff00c1, #9a00ff, #00b8ff, #00ff9a, #ffdd00, #ff00c1);
+  background-size: 400% 400%;
+  animation: gradient-animation 15s ease infinite;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  border-radius: 1rem;
+}
+
+.holographic-card:hover {
+  transform: rotateY(15deg) rotateX(10deg) scale3d(1.05, 1.05, 1.05);
+}
+
+.holographic-card-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 25%);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 1;
+}
+
+.holographic-card:hover .holographic-card-glow {
+  opacity: 1;
+}
+
+.holographic-card-content {
+  position: relative;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: inherit;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cyber-link {
+  color: #00f6ff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.cyber-link:hover {
+  animation: glow 1.5s infinite alternate;
+}
